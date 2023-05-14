@@ -1,0 +1,2 @@
+from gym_game2048.wrappers.log_observation import LogObservation
+from gym_game2048.wrappers.normalize_observation import NormalizeObservation
