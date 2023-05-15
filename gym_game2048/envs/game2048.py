@@ -5,7 +5,7 @@ import gymnasium as gym
 from gymnasium import spaces
 
 class Game2048(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
     def __init__(self, render_mode=None, size=4, goal=2048):
         self.size = size
@@ -19,8 +19,11 @@ class Game2048(gym.Env):
 
         assert math.log2(goal).is_integer() and goal > 4, "Goal must be a power of 2 and bigger than 4."
 
-        self.observation_space = spaces.Box(low=0, high=goal, shape=(size, size), dtype=np.float32)
-        # 0: right, 1: up, 2: down, 3: left
+        # goal from the board's perspective
+        self.board_goal = np.log2(goal)
+
+        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(size, size, 1), dtype=np.uint32)
+        # 0: left, 1: right, 2: up, 3: down
         self.action_space = spaces.Discrete(4)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -32,7 +35,7 @@ class Game2048(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        self.board = np.zeros((self.size, self.size), dtype=int)
+        self.board = np.zeros((self.size, self.size), dtype=np.uint32)
 
         self.spawnblock()
         self.spawnblock()
@@ -55,13 +58,13 @@ class Game2048(gym.Env):
         return observation, info
 
     def _get_obs(self):
-        return self.board.astype(np.float32)
+        return np.expand_dims(self.board, axis=-1)
 
     def _get_info(self):
         return {'score_per_step': self.score_per_step}
 
     def spawnblock(self):
-        number = self.np_random.choice([2, 4], 1, p=(0.8, 0.2)).item()
+        number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
         empty_list = []
         for r in range(self.size):
             for c in range(self.size):
@@ -136,8 +139,8 @@ class Game2048(gym.Env):
         # way must be 0 or 1
         assert way == 0 or way == 1
 
-        new_line = np.zeros(self.size)
-        is_combined = np.zeros(self.size)
+        new_line = np.zeros(self.size, dtype=np.int32)
+        is_combined = np.zeros(self.size, dtype=np.int32)
 
         if way == 0:
             cur = 0
@@ -148,10 +151,10 @@ class Game2048(gym.Env):
                         cur += 1
                     else:
                         if new_line[cur-1] == line[i] and is_combined[cur-1] == 0:
-                            new_line[cur-1] += new_line[cur-1]
+                            new_line[cur-1] += 1
                             # add score
                             # self.score_per_step must be int
-                            self.score_per_step += int(new_line[cur-1])
+                            self.score_per_step += 2 ** new_line[cur-1]
                             is_combined[cur-1] = 1
                         else:
                             new_line[cur] = line[i]
@@ -166,10 +169,10 @@ class Game2048(gym.Env):
                         cur -= 1
                     else:
                         if new_line[cur+1] == line[i] and is_combined[cur+1] == 0:
-                            new_line[cur+1] += new_line[cur+1]
+                            new_line[cur+1] += 1
                             # add score
                             # self.score_per_step must be int
-                            self.score_per_step += int(new_line[cur+1])
+                            self.score_per_step += 2 ** new_line[cur+1]
                             is_combined[cur+1] = 1
                         else:
                             new_line[cur] = line[i]
@@ -193,35 +196,35 @@ class Game2048(gym.Env):
         self.best_score = max(self.best_score, self.score)
 
     def _is_reach_goal(self):
-        return np.any(self.board == self.goal)
+        return np.any(self.board == self.board_goal)
 
     def render(self):
         if self.render_mode == "rgb_array":
             return self._render_frame()
 
     def _render_block(self, r, c, canvas: pygame.Surface):
-        n_log = int(math.log2(self.board[r][c])) if self.board[r][c] != 0 else 0
+        number = self.board[r][c]
         left_top_this_block = (self.left_top_first_block + np.array([self.to_next_block * c, self.to_next_block * r]))
         pygame.draw.rect(
             canvas,
-            self.block_color[n_log],
+            self.block_color[number],
             (left_top_this_block, (self.block_rect))
         )
         # Empty parts do not output a number.
         if self.board[r][c] == 0:
             return
 
-        if n_log < 7:
+        if number < 7:
             size = self.block_font_size[0]
-        elif n_log < 10:
+        elif number < 10:
             size = self.block_font_size[1]
         else:
             size = self.block_font_size[2]
         font = pygame.font.Font(None, size)
 
         # render text
-        color = self.block_font_color[0] if n_log < 3 else self.block_font_color[1]
-        text = font.render(str(self.board[r][c]), True, color)
+        color = self.block_font_color[0] if number < 3 else self.block_font_color[1]
+        text = font.render(str(2 ** self.board[r][c]), True, color)
         text_rect = text.get_rect(center=(left_top_this_block + np.array([self.block_size//2, self.block_size//2])))
         canvas.blit(text, text_rect)
 
