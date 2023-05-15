@@ -6,7 +6,7 @@ import numpy as np
 class ObsLikeGame(gym.ObservationWrapper):
     def __init__(self, env):
         super().__init__(env)
-        self.observation_space = Box(shape=(self.size, self.size, 1), low=0, high=self.goal, dtype=np.float32)
+        self.observation_space = Box(shape=(self.size, self.size, 1), low=0, high=self.goal, dtype=np.uint32)
 
     def observation(self, obs):
         return 2 ** obs

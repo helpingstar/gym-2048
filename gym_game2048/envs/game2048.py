@@ -22,7 +22,7 @@ class Game2048(gym.Env):
         # goal from the board's perspective
         self.board_goal = np.log2(goal)
 
-        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(size, size, 1), dtype=np.uint32)
+        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(size, size, 1), dtype=np.uint8)
         # 0: left, 1: right, 2: up, 3: down
         self.action_space = spaces.Discrete(4)
 
