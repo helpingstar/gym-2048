@@ -9,4 +9,4 @@ class ObsLikeGame(gym.ObservationWrapper):
         self.observation_space = Box(shape=(self.size, self.size, 1), low=0, high=self.goal, dtype=np.uint32)
 
     def observation(self, obs):
-        return 2 ** obs
+        return obs.astype(np.uint32) ** obs

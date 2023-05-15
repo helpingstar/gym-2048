@@ -35,7 +35,7 @@ class Game2048(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        self.board = np.zeros((self.size, self.size), dtype=np.uint32)
+        self.board = np.zeros((self.size, self.size), dtype=np.uint8)
 
         self.spawnblock()
         self.spawnblock()
