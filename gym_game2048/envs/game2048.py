@@ -43,7 +43,7 @@ class Game2048(gym.Env):
         # total score
         self.score = 0
         # score per step
-        self.score_per_step = 0
+        self.score_per_step = []
         # check_step
         self.n_step = 0
 
@@ -61,7 +61,7 @@ class Game2048(gym.Env):
         return np.expand_dims(self.board, axis=-1)
 
     def _get_info(self):
-        return {'score_per_step': self.score_per_step, 'score': self.score}
+        return {'score_per_step': self.score_per_step, 'score': self.score, 'max': np.max(self.board)}
 
     def spawnblock(self):
         number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
@@ -84,7 +84,7 @@ class Game2048(gym.Env):
         # increase n_step
         self.n_step += 1
 
-        self.score_per_step = 0
+        self.score_per_step = []
 
         # Checks if the action is valid.
         is_changed = False
@@ -104,7 +104,7 @@ class Game2048(gym.Env):
                     is_changed = np.any(self.board[:, c] != new_line)
                 self.board[:, c] = new_line
 
-        self.score += self.score_per_step
+        self.score += sum(self.score_per_step)
 
         # If the goal is reached, set the reward to 1.
         if self._is_reach_goal():
@@ -158,7 +158,7 @@ class Game2048(gym.Env):
                             new_line[cur-1] += 1
                             # add score
                             # self.score_per_step must be int
-                            self.score_per_step += 2 ** new_line[cur-1]
+                            self.score_per_step.append(2 ** new_line[cur-1])
                             is_combined[cur-1] = 1
                         else:
                             new_line[cur] = line[i]
@@ -176,7 +176,7 @@ class Game2048(gym.Env):
                             new_line[cur+1] += 1
                             # add score
                             # self.score_per_step must be int
-                            self.score_per_step += 2 ** new_line[cur+1]
+                            self.score_per_step.append(2 ** new_line[cur+1])
                             is_combined[cur+1] = 1
                         else:
                             new_line[cur] = line[i]
