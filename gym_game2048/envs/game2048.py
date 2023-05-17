@@ -5,7 +5,7 @@ import gymnasium as gym
 from gymnasium import spaces
 
 class Game2048(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 15}
 
     def __init__(self, render_mode=None, size=4, goal=2048):
         self.size = size
@@ -244,46 +244,50 @@ class Game2048(gym.Env):
         canvas.blit(n_step, (self.window_width // 2 - 15, 65))
 
     def _render_frame(self):
-        if self.window is None and self.render_mode == "human":
+        pygame.font.init()
+        if self.window is None:
             pygame.init()
-            pygame.display.init()
-            # (width, height)
-            self.window = pygame.display.set_mode(
-                (self.window_width, self.window_height)
-            )
-
-            # rendering : Size
-            self.temp_window_margin = 10
-
-            self.board_margin = int((self.window_width - 2 * self.temp_window_margin) / (8 * self.size + 1))
-            self.block_size = int((self.window_width - 2 * self.temp_window_margin) / (8 * self.size + 1) * 7)
-
-            self.board_size = self.board_margin * (self.size+1) + self.block_size * self.size
-            self.window_margin = (self.window_width - self.board_size) // 2
-
-            self.block_rect = (self.block_size, self.block_size)
-
-            self.left_top_board = np.array([self.window_margin, self.window_height-self.window_margin-self.board_size])
-            self.left_top_first_block = self.left_top_board + np.array([self.board_margin, self.board_margin])
-            self.to_next_block = self.block_size + self.board_margin
-
-            # rendering: Block Color
-            self.block_color = [(205, 193, 180), (238, 228, 218), (237, 224, 200), (242, 177, 121),
-                                (245, 149, 99),  (246, 124, 95),  (246, 94, 59),   (237, 207, 114),
-                                (237, 204, 97),  (237, 200, 80),  (237, 197, 63),  (237, 194, 46)]
-            self.game_color = {}
-            self.game_color['background'] = pygame.Color("#faf8ef")
-            self.game_color['board_background'] = pygame.Color("#bbada0")
-            self.block_font_color = [(119, 110, 101), (249, 246, 242)]
-
-            # rendering: Block Font Size
-            self.block_font_size = [int(self.block_size * rate) for rate in [0.7, 0.6, 0.45]]
-
-            # rendering: Info
-            self.info_font = pygame.font.Font(None, 30)
+            if self.render_mode == "human":
+                pygame.display.init()
+                # (width, height)
+                self.window = pygame.display.set_mode(
+                    (self.window_width, self.window_height)
+                )
+            else:
+                self.window = pygame.Surface((self.window_width, self.window_height))
 
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
+
+        # rendering : Size
+        self.temp_window_margin = 10
+
+        self.board_margin = int((self.window_width - 2 * self.temp_window_margin) / (8 * self.size + 1))
+        self.block_size = int((self.window_width - 2 * self.temp_window_margin) / (8 * self.size + 1) * 7)
+
+        self.board_size = self.board_margin * (self.size+1) + self.block_size * self.size
+        self.window_margin = (self.window_width - self.board_size) // 2
+
+        self.block_rect = (self.block_size, self.block_size)
+
+        self.left_top_board = np.array([self.window_margin, self.window_height-self.window_margin-self.board_size])
+        self.left_top_first_block = self.left_top_board + np.array([self.board_margin, self.board_margin])
+        self.to_next_block = self.block_size + self.board_margin
+
+        # rendering: Block Color
+        self.block_color = [(205, 193, 180), (238, 228, 218), (237, 224, 200), (242, 177, 121),
+                            (245, 149, 99),  (246, 124, 95),  (246, 94, 59),   (237, 207, 114),
+                            (237, 204, 97),  (237, 200, 80),  (237, 197, 63),  (237, 194, 46)]
+        self.game_color = {}
+        self.game_color['background'] = pygame.Color("#faf8ef")
+        self.game_color['board_background'] = pygame.Color("#bbada0")
+        self.block_font_color = [(119, 110, 101), (249, 246, 242)]
+
+        # rendering: Block Font Size
+        self.block_font_size = [int(self.block_size * rate) for rate in [0.7, 0.6, 0.45]]
+
+        # rendering: Info
+        self.info_font = pygame.font.Font(None, 30)
 
         canvas = pygame.Surface((self.window_width, self.window_height))
         canvas.fill(self.game_color['background'])
