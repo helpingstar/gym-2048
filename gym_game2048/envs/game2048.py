@@ -120,10 +120,14 @@ class Game2048(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
+        # If the game ends without reaching the goal, set the reward to -1.
         if terminated:
             self._update_best_score()
-        # If the goal is not reached, set the reward to 1.
-        return self._get_obs(), 0, terminated, False, self._get_info()
+            reward = -1
+        else:
+            reward = 0
+
+        return self._get_obs(), reward, terminated, False, self._get_info()
 
     def _combiner(self, line:np.ndarray, way:int) -> np.ndarray:
         """Combine identical blocks on a single line.
