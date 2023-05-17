@@ -61,7 +61,7 @@ class Game2048(gym.Env):
         return np.expand_dims(self.board, axis=-1)
 
     def _get_info(self):
-        return {'score_per_step': self.score_per_step}
+        return {'score_per_step': self.score_per_step, 'score': self.score}
 
     def spawnblock(self):
         number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
