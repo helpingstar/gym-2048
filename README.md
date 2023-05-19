@@ -40,7 +40,7 @@ The observation is a ndarray with shape (size, size, 1).
 
 The elements correspond to the following:
 * 0 : Blank cell
-* 1~$\log_2 (\text{goal})$ : $2^n$
+* 1~ $\log_{2} (\text{goal})$ : $2^n$
 
 # Rewards
 If you reach the goal, you get a reward of 1; if you don't reach the goal and the game ends, you get a reward of -1. In all other cases, you get a reward of 0.
