@@ -4,15 +4,21 @@
 1. 초기화할 때 블록의 위치를 고정하기 (오차를 줄이고 연산속도를 높임)
 2. 큰 수에서의 블록 폰트
 
+# Install
+```bash
+git clone https://github.com/helpingstar/gym-game2048.git
+cd gym-game2048
+pip install -r requirements.txt
+pip install -e .
+```
+
+
 # Example
 ```python
 import gymnasium as gym
 import gym_game2048
-from gym_game2048.wrappers import LogObservation, NormalizeObservation
 
 env = gym.make("gym_game2048/Game2048-v0", render_mode="human")
-env = LogObservation(env)
-env = NormalizeObservation(env, by_max=False, include_goal=False)
 
 observation, info = env.reset(seed=42)
 for _ in range(1000):
@@ -36,7 +42,7 @@ There are 4 discrete deterministic actions:
 * 3 : Swipe down
 
 # Observation Space
-The observation is a ndarray with shape (size, size, 1).
+The observation is a ndarray with shape (1, size, size).
 
 The elements correspond to the following:
 * 0 : Blank cell
@@ -45,6 +51,9 @@ The elements correspond to the following:
 # Rewards
 If you reach the goal, you get a reward of 1; if you don't reach the goal and the game ends, you get a reward of -1. In all other cases, you get a reward of 0.
 
+If you want to change the reward policy, use Wrappers.
 # Arguments
 * `size` : The size of the board. The board will be made to be the size of (size, size).
 * `goal` : The number you want to reach. It should be entered as a power of two. The game ends when one of the numbers on the board becomes the `goal`.
+
+# Wrappers
