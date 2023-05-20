@@ -22,7 +22,7 @@ class Game2048(gym.Env):
         # goal from the board's perspective
         self.board_goal = np.log2(goal)
 
-        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(size, size, 1), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8)
         # 0: left, 1: right, 2: up, 3: down
         self.action_space = spaces.Discrete(4)
 
@@ -58,7 +58,7 @@ class Game2048(gym.Env):
         return observation, info
 
     def _get_obs(self):
-        return np.expand_dims(self.board, axis=-1)
+        return np.expand_dims(self.board, axis=0)
 
     def _get_info(self):
         return {'score_per_step': self.score_per_step, 'score': self.score, 'max': np.max(self.board)}
