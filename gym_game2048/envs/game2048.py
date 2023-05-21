@@ -20,7 +20,7 @@ class Game2048(gym.Env):
         assert math.log2(goal).is_integer() and goal > 4, "Goal must be a power of 2 and bigger than 4."
 
         # goal from the board's perspective
-        self.board_goal = np.log2(goal)
+        self.board_goal = int(np.log2(goal))
 
         self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8)
         # 0: left, 1: right, 2: up, 3: down
