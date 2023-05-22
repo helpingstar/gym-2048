@@ -248,7 +248,7 @@ class Game2048(gym.Env):
         pygame.font.init()
         if self.window is None:
             pygame.init()
-            
+
             # rendering : Size
             self.temp_window_margin = 10
 

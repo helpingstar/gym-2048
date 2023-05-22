@@ -1,9 +1,5 @@
 # gym-game2048
 
-// TODO
-1. 초기화할 때 블록의 위치를 고정하기 (오차를 줄이고 연산속도를 높임)
-2. 큰 수에서의 블록 폰트
-
 # Install
 ```bash
 git clone https://github.com/helpingstar/gym-game2048.git
