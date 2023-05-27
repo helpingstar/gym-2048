@@ -233,16 +233,12 @@ class Game2048(gym.Env):
         canvas.blit(text, text_rect)
 
     def _render_info(self, canvas):
-        info_font = pygame.font.Font(None, 30)
+        info_font = pygame.font.Font(None, 35)
         score = info_font.render(f'score: {self.score}', True, (119, 110, 101))
         best_score = info_font.render(f'best: {self.best_score}', True, (119, 110, 101))
-        n_episode = info_font.render(f'episode: {self.n_episode}', True, (119, 110, 101))
-        n_step = info_font.render(f'step: {self.n_step}', True, (119, 110, 101))
 
-        canvas.blit(score, (20, 25))
-        canvas.blit(best_score, (20, 65))
-        canvas.blit(n_episode, (self.window_width // 2 - 15, 25))
-        canvas.blit(n_step, (self.window_width // 2 - 15, 65))
+        canvas.blit(score, (15, 25))
+        canvas.blit(best_score, (15, 65))
 
     def _render_frame(self):
         pygame.font.init()
