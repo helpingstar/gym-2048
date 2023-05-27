@@ -208,11 +208,10 @@ class Game2048(gym.Env):
 
     def _render_block(self, r, c, canvas: pygame.Surface):
         number = self.board[r][c]
-        left_top_this_block = (self.left_top_first_block + np.array([self.to_next_block * c, self.to_next_block * r]))
         pygame.draw.rect(
             canvas,
             self.block_color[number],
-            (left_top_this_block, (self.block_rect))
+            ((self.block_x_pos[c], self.block_y_pos[r]), (self.block_size, self.block_size))
         )
         # Empty parts do not output a number.
         if self.board[r][c] == 0:
@@ -229,7 +228,7 @@ class Game2048(gym.Env):
         # render text
         color = self.block_font_color[0] if number < 3 else self.block_font_color[1]
         text = font.render(str(2 ** self.board[r][c]), True, color)
-        text_rect = text.get_rect(center=(left_top_this_block + np.array([self.block_size//2, self.block_size//2])))
+        text_rect = text.get_rect(center=((self.block_x_pos[c] + self.block_size//2, self.block_y_pos[r] + self.block_size//2)))
         canvas.blit(text, text_rect)
 
     def _render_info(self, canvas):
@@ -246,19 +245,20 @@ class Game2048(gym.Env):
             pygame.init()
 
             # rendering : Size
-            self.temp_window_margin = 10
+            self.window_margin = 10
 
-            self.board_margin = int((self.window_width - 2 * self.temp_window_margin) / (8 * self.size + 1))
-            self.block_size = int((self.window_width - 2 * self.temp_window_margin) / (8 * self.size + 1) * 7)
+            self.board_size = (self.window_width - 2 * self.window_margin)
+            self.block_size = int(self.board_size / (8 * self.size + 1) * 7)
 
-            self.board_size = self.board_margin * (self.size+1) + self.block_size * self.size
-            self.window_margin = (self.window_width - self.board_size) // 2
+            self.block_x_pos = np.zeros(self.size)
+            self.block_y_pos = np.zeros(self.size)
 
-            self.block_rect = (self.block_size, self.block_size)
+            self.left_top_board = (self.window_margin, self.window_height-self.window_margin-self.board_size)
+            gap = self.board_size / (1 + 8 * self.size)
 
-            self.left_top_board = np.array([self.window_margin, self.window_height-self.window_margin-self.board_size])
-            self.left_top_first_block = self.left_top_board + np.array([self.board_margin, self.board_margin])
-            self.to_next_block = self.block_size + self.board_margin
+            for i in range(self.size):
+                self.block_x_pos[i] = int(self.left_top_board[0] + (8 * i + 1) * gap)
+                self.block_y_pos[i] = int(self.left_top_board[1] + (8 * i + 1) * gap)
 
             # rendering: Block Color
             self.block_color = [(205, 193, 180), (238, 228, 218), (237, 224, 200), (242, 177, 121),
@@ -285,7 +285,6 @@ class Game2048(gym.Env):
             self.clock = pygame.time.Clock()
 
         # # rendering: Info
-        # self.
 
         canvas = pygame.Surface((self.window_width, self.window_height))
         canvas.fill(self.game_color['background'])
@@ -293,7 +292,7 @@ class Game2048(gym.Env):
         pygame.draw.rect(
             canvas,
             self.game_color['board_background'],
-            (self.window_margin, self.window_height-self.window_margin-self.board_size, self.board_size, self.board_size)
+            (self.left_top_board, (self.board_size, self.board_size))
         )
 
         for r in range(self.size):
