@@ -37,6 +37,8 @@ class Game2048(gym.Env):
 
         self.board = np.zeros((self.size, self.size), dtype=np.uint8)
 
+        self.legal_moves = np.ones(4, np.uint8)
+
         self.spawnblock()
         self.spawnblock()
 
@@ -61,7 +63,50 @@ class Game2048(gym.Env):
         return np.expand_dims(self.board, axis=0)
 
     def _get_info(self):
-        return {'score_per_step': self.score_per_step, 'score': self.score, 'max': np.max(self.board)}
+        return {'score_per_step': self.score_per_step, 'score': self.score, 'max': np.max(self.board), 'action_mask': self.legal_moves}
+
+    def _check_if_same(self, way: int) -> bool:
+        """Check if blocks with the same number are next to each other.
+
+        Args:
+            way (int): 0 : check row, 1: check column
+
+        Returns:
+            bool: Returns True if there are blocks with the same number side by side.
+        """
+        if way == 0:
+            for r in range(self.size):
+                for c in range(self.size-1):
+                    if self.board[r][c] == self.board[r][c+1]:
+                        return True
+        else:
+            for c in range(self.size):
+                for r in range(self.size-1):
+                    if self.board[r][c] == self.board[r+1][c]:
+                        return True
+
+    def _update_legal_moves(self):
+        # Check empty block
+        if np.any(self.board == 0):
+            self.legal_moves[:] = 1
+            return
+        
+        
+        if self._check_if_same(0):
+            self.legal_moves[0] = 1
+            self.legal_moves[1] = 1
+        else:
+            self.legal_moves[0] = 0
+            self.legal_moves[1] = 0
+        
+        if self._check_if_same(1):
+            self.legal_moves[2] = 1
+            self.legal_moves[3] = 1
+        else:
+            self.legal_moves[2] = 0
+            self.legal_moves[3] = 0
+            
+        return
 
     def spawnblock(self):
         number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
@@ -86,22 +131,18 @@ class Game2048(gym.Env):
 
         self.score_per_step = []
 
-        # Checks if the action is valid.
-        is_changed = False
+        self._update_legal_moves()
+
+        # Check to see if anything has changed due to the action.
+        is_changed = self.legal_moves[action] == 1
 
         if action < 2:
             for r in range(self.size):
                 new_line = self._combiner(self.board[r, :], action)
-                # Check to see if anything has changed due to the action.
-                if not is_changed:
-                    is_changed = np.any(self.board[r, :] != new_line)
                 self.board[r, :] = new_line
         else:
             for c in range(self.size):
                 new_line = self._combiner(self.board[:, c], action-2)
-                # Check to see if anything has changed due to the action.
-                if not is_changed:
-                    is_changed = np.any(self.board[:, c] != new_line)
                 self.board[:, c] = new_line
 
         self.score += sum(self.score_per_step)
@@ -186,14 +227,8 @@ class Game2048(gym.Env):
     def _is_game_over(self):
         if np.any(self.board == 0):
             return False
-        for r in range(self.size):
-            for c in range(self.size-1):
-                if self.board[r][c] == self.board[r][c+1]:
-                    return False
-        for c in range(self.size):
-            for r in range(self.size-1):
-                if self.board[r][c] == self.board[r+1][c]:
-                    return False
+        if self._check_if_same(0) or self._check_if_same(1):
+            return False
         return True
 
     def _update_best_score(self):
