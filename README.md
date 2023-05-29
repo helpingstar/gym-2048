@@ -1,5 +1,8 @@
 # gym-game2048
 
+![game2048_clear](https://github.com/helpingstar/gym-game2048/assets/54899900/f15e4f79-9c9c-4b23-9a5d-1a8f1c14d456)
+
+
 # Install
 ```bash
 git clone https://github.com/helpingstar/gym-game2048.git
