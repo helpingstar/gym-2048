@@ -90,22 +90,22 @@ class Game2048(gym.Env):
         if np.any(self.board == 0):
             self.legal_moves[:] = 1
             return
-        
-        
+
+
         if self._check_if_same(0):
             self.legal_moves[0] = 1
             self.legal_moves[1] = 1
         else:
             self.legal_moves[0] = 0
             self.legal_moves[1] = 0
-        
+
         if self._check_if_same(1):
             self.legal_moves[2] = 1
             self.legal_moves[3] = 1
         else:
             self.legal_moves[2] = 0
             self.legal_moves[3] = 0
-            
+
         return
 
     def spawnblock(self):
@@ -149,24 +149,24 @@ class Game2048(gym.Env):
 
         # If the goal is reached, set the reward to 1.
         if self._is_reach_goal():
-            self._update_best_score()
-            return self._get_obs(), 1, True, False, self._get_info()
-
-        if is_changed:
-            self.spawnblock()
-            terminated = self._is_game_over()
+            reward = 1
+            terminated = True
         else:
-            terminated = False
+            if is_changed:
+                self.spawnblock()
+                terminated = self._is_game_over()
+            else:
+                terminated = False
+
+            # If the game ends without reaching the goal, set the reward to -1.
+            if terminated:
+                self._update_best_score()
+                reward = -1
+            else:
+                reward = 0
 
         if self.render_mode == "human":
             self._render_frame()
-
-        # If the game ends without reaching the goal, set the reward to -1.
-        if terminated:
-            self._update_best_score()
-            reward = -1
-        else:
-            reward = 0
 
         return self._get_obs(), reward, terminated, False, self._get_info()
 
@@ -280,15 +280,15 @@ class Game2048(gym.Env):
             pygame.init()
 
             # rendering : Size
-            self.window_margin = 10
+            win_mg = 10
 
-            self.board_size = (self.window_width - 2 * self.window_margin)
+            self.board_size = (self.window_width - 2 * win_mg)
             self.block_size = int(self.board_size / (8 * self.size + 1) * 7)
 
             self.block_x_pos = np.zeros(self.size)
             self.block_y_pos = np.zeros(self.size)
 
-            self.left_top_board = (self.window_margin, self.window_height-self.window_margin-self.board_size)
+            self.left_top_board = (win_mg, self.window_height-win_mg-self.board_size)
             gap = self.board_size / (1 + 8 * self.size)
 
             for i in range(self.size):
@@ -319,7 +319,7 @@ class Game2048(gym.Env):
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
-        # # rendering: Info
+        # rendering: Info
 
         canvas = pygame.Surface((self.window_width, self.window_height))
         canvas.fill(self.game_color['background'])
