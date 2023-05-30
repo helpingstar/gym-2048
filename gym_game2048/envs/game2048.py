@@ -38,6 +38,7 @@ class Game2048(gym.Env):
         self.board = np.zeros((self.size, self.size), dtype=np.uint8)
 
         self.legal_moves = np.ones(4, np.uint8)
+        self.is_legal = True
 
         self.spawnblock()
         self.spawnblock()
@@ -63,7 +64,9 @@ class Game2048(gym.Env):
         return np.expand_dims(self.board, axis=0)
 
     def _get_info(self):
-        return {'score_per_step': self.score_per_step, 'score': self.score, 'max': np.max(self.board), 'action_mask': self.legal_moves}
+        return {'score_per_step': self.score_per_step, 'score': self.score,
+                'max': np.max(self.board), 'action_mask': self.legal_moves,
+                'is_legal': self.is_legal}
 
     def _check_if_same(self, way: int) -> bool:
         """Check if blocks with the same number are next to each other.
@@ -153,9 +156,11 @@ class Game2048(gym.Env):
             terminated = True
         else:
             if is_changed:
+                self.is_legal = True
                 self.spawnblock()
                 terminated = self._is_game_over()
             else:
+                self.is_legal = False
                 terminated = False
 
             # If the game ends without reaching the goal, set the reward to -1.
