@@ -58,6 +58,8 @@ class Game2048(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
+        self._update_legal_moves()
+        
         return observation, info
 
     def _get_obs(self):
@@ -80,21 +82,19 @@ class Game2048(gym.Env):
         if way == 0:
             for r in range(self.size):
                 for c in range(self.size-1):
+                    if self.board[r][c] == 0:
+                        continue
                     if self.board[r][c] == self.board[r][c+1]:
                         return True
         else:
             for c in range(self.size):
                 for r in range(self.size-1):
+                    if self.board[r][c] == 0:
+                        continue
                     if self.board[r][c] == self.board[r+1][c]:
                         return True
 
     def _update_legal_moves(self):
-        # Check empty block
-        if np.any(self.board == 0):
-            self.legal_moves[:] = 1
-            return
-
-
         if self._check_if_same(0):
             self.legal_moves[0] = 1
             self.legal_moves[1] = 1
@@ -108,9 +108,50 @@ class Game2048(gym.Env):
         else:
             self.legal_moves[2] = 0
             self.legal_moves[3] = 0
-
+        
+        for i in range(4):
+            if self.legal_moves[i] == 1:
+                continue
+            self.legal_moves[i] = 1 if self._check_legal(i) else 0
         return
-
+    
+    def _check_legal(self, way: int):
+        assert 0 <= way <= 4, "Way: [0, 4]"
+        if way == 0:  # 0: left
+            checker = self.board[:, self.size-1] != 0
+            for i in range(self.size-2, -1, -1):
+                line = (self.board[:, i] != 0)
+                if np.any((checker ^ line) & checker):
+                    return True
+                else:
+                    checker |= line
+        elif way == 1:  # 1: right
+            checker = self.board[:, 0] != 0
+            for i in range(1, self.size):
+                line = (self.board[:, i] != 0)
+                if np.any((checker ^ line) & checker):
+                    return True
+                else:
+                    checker |= line
+        elif way == 2:  # 2: up
+            checker = self.board[self.size-1, :] != 0
+            for i in range(self.size-2, -1, -1):
+                line = (self.board[i, :] != 0)
+                if np.any((checker ^ line) & checker):
+                    return True
+                else:
+                    checker |= line
+                    
+        else:  # 3: down
+            checker = self.board[0, :] != 0
+            for i in range(1, self.size):
+                line = (self.board[i, :] != 0)
+                if np.any((checker ^ line) & checker):
+                    return True
+                else:
+                    checker |= line
+        return False
+                    
     def spawnblock(self):
         number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
         empty_list = []
@@ -131,45 +172,43 @@ class Game2048(gym.Env):
 
         # increase n_step
         self.n_step += 1
-
         self.score_per_step = []
-
-        self._update_legal_moves()
 
         # Check to see if anything has changed due to the action.
         is_changed = self.legal_moves[action] == 1
+        
+        if is_changed:
+            self.is_legal = True
+            if action < 2:
+                for r in range(self.size):
+                    new_line = self._combiner(self.board[r, :], action)
+                    self.board[r, :] = new_line
+            else:
+                for c in range(self.size):
+                    new_line = self._combiner(self.board[:, c], action-2)
+                    self.board[:, c] = new_line
+            self.score += sum(self.score_per_step)
 
-        if action < 2:
-            for r in range(self.size):
-                new_line = self._combiner(self.board[r, :], action)
-                self.board[r, :] = new_line
-        else:
-            for c in range(self.size):
-                new_line = self._combiner(self.board[:, c], action-2)
-                self.board[:, c] = new_line
-
-        self.score += sum(self.score_per_step)
-
-        # If the goal is reached, set the reward to 1.
-        if self._is_reach_goal():
-            reward = 1
-            terminated = True
-        else:
-            if is_changed:
-                self.is_legal = True
+            # If the goal is reached, set the reward to 1.
+            if self._is_reach_goal():
+                reward = 1
+                terminated = True
+            else:
                 self.spawnblock()
                 terminated = self._is_game_over()
-            else:
-                self.is_legal = False
-                terminated = False
+                if terminated:
+                    self._update_best_score()
+                    reward = -1
+                else:
+                    reward = 0
+            
+        else:
+            self.is_legal = False
+            terminated = False
+            reward = 0
 
-            # If the game ends without reaching the goal, set the reward to -1.
-            if terminated:
-                self._update_best_score()
-                reward = -1
-            else:
-                reward = 0
-
+        self._update_legal_moves()
+        
         if self.render_mode == "human":
             self._render_frame()
 
