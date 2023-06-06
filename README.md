@@ -1,3 +1,7 @@
+The code that trained this environment can be found below.
+
+[rl-application-gym-game2048](https://github.com/helpingstar/rl-application-gym-game2048)
+
 # gym-game2048
 
 https://github.com/helpingstar/gym-game2048/assets/54899900/b276a92b-bf1c-4e0f-aaf8-0236d38a5e7e
