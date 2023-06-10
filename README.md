@@ -59,3 +59,42 @@ If you want to change the reward policy, use Wrappers.
 * `goal` : The number you want to reach. It should be entered as a power of two. The game ends when one of the numbers on the board becomes the `goal`.
 
 # Wrappers
+
+This is a personally created Wrapper. When applying, pay attention to the **priority** of wrappers.
+
+## Normalize2048
+
+Divide the number on the board by the log of goal, which is the largest number that can be on the board.
+
+Example)
+
+```
+# goal == 2048, log of goal == 11
+# Render
+| 512 | 16 | 4 | 8 |
+# Original Observation
+| 9 | 4 | 2 | 3
+# Normalized Observation
+| 0.81.. | 0.36.. | 0.18.. | 0.27.. |
+```
+
+## RewardConverter
+
+Change the reward system.
+
+* `goal`  : Rewards for clearing the game
+* `fail`  : Reward to receive when the game fails
+* `other` : A situation in which the game is neither goal nor fail
+
+## RewardByScore
+
+The reward system is determined based on the points obtained, not whether or not cleared.
+
+* `log` : Whether to take the log of each score
+* `goal_bonus` : Additional reward for clearing the game
+
+## TerminateIllegalWrapper
+
+The episode ends immediately upon Illegal Action.
+
+* `illegal_reward` : Reward to receive when terminated due to illegal action
