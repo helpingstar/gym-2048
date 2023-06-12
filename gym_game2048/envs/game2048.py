@@ -56,10 +56,10 @@ class Game2048(gym.Env):
         info = self._get_info()
 
         if self.render_mode == "human":
-            self._render_frame()
+            self.render()
 
         self._update_legal_moves()
-        
+
         return observation, info
 
     def _get_obs(self):
@@ -108,13 +108,13 @@ class Game2048(gym.Env):
         else:
             self.legal_moves[2] = 0
             self.legal_moves[3] = 0
-        
+
         for i in range(4):
             if self.legal_moves[i] == 1:
                 continue
             self.legal_moves[i] = 1 if self._check_legal(i) else 0
         return
-    
+
     def _check_legal(self, way: int):
         assert 0 <= way <= 4, "Way: [0, 4]"
         if way == 0:  # 0: left
@@ -141,7 +141,7 @@ class Game2048(gym.Env):
                     return True
                 else:
                     checker |= line
-                    
+
         else:  # 3: down
             checker = self.board[0, :] != 0
             for i in range(1, self.size):
@@ -151,7 +151,7 @@ class Game2048(gym.Env):
                 else:
                     checker |= line
         return False
-                    
+
     def spawnblock(self):
         number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
         empty_list = []
@@ -176,7 +176,7 @@ class Game2048(gym.Env):
 
         # Check to see if anything has changed due to the action.
         is_changed = self.legal_moves[action] == 1
-        
+
         if is_changed:
             self.is_legal = True
             if action < 2:
@@ -201,20 +201,20 @@ class Game2048(gym.Env):
                     reward = -1
                 else:
                     reward = 0
-            
+
         else:
             self.is_legal = False
             terminated = False
             reward = 0
 
         self._update_legal_moves()
-        
+
         if self.render_mode == "human":
-            self._render_frame()
+            self.render()
 
         return self._get_obs(), reward, terminated, False, self._get_info()
 
-    def _combiner(self, line:np.ndarray, way:int) -> np.ndarray:
+    def _combiner(self, line: np.ndarray, way: int) -> np.ndarray:
         """Combine identical blocks on a single line.
 
         Args:
@@ -281,10 +281,6 @@ class Game2048(gym.Env):
     def _is_reach_goal(self):
         return np.any(self.board == self.board_goal)
 
-    def render(self):
-        if self.render_mode == "rgb_array":
-            return self._render_frame()
-
     def _render_block(self, r, c, canvas: pygame.Surface):
         number = self.board[r][c]
         pygame.draw.rect(
@@ -318,7 +314,7 @@ class Game2048(gym.Env):
         canvas.blit(score, (15, 25))
         canvas.blit(best_score, (15, 65))
 
-    def _render_frame(self):
+    def render(self):
         pygame.font.init()
         if self.window is None:
             pygame.init()
