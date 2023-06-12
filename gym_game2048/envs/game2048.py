@@ -17,12 +17,13 @@ class Game2048(gym.Env):
         # number of episode
         self.n_episode = 0
 
-        assert math.log2(goal).is_integer() and goal > 4, "Goal must be a power of 2 and bigger than 4."
+        assert math.log2(goal).is_integer() and (2 < math.log2(goal) < 256), "goal must be 0 or a power of 2 and 4 < goal < 2^256"
 
         # goal from the board's perspective
         self.board_goal = int(np.log2(goal))
 
         self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8)
+
         # 0: left, 1: right, 2: up, 3: down
         self.action_space = spaces.Discrete(4)
 
@@ -285,24 +286,30 @@ class Game2048(gym.Env):
         number = self.board[r][c]
         pygame.draw.rect(
             canvas,
-            self.block_color[number],
+            self.block_color[min(11, number)],
             ((self.block_x_pos[c], self.block_y_pos[r]), (self.block_size, self.block_size))
         )
         # Empty parts do not output a number.
         if self.board[r][c] == 0:
             return
 
+        # render number
         if number < 7:
             size = self.block_font_size[0]
         elif number < 10:
             size = self.block_font_size[1]
+        elif number < 13:
+            size = self.block_font_size[2]
+        elif number < 20:
+            size = self.block_font_size[3]
         else:
             size = self.block_font_size[2]
         font = pygame.font.Font(None, size)
 
-        # render text
+        num_str = str(2 ** self.board[r][c]) if number < 20 else f'2^{number}'
+
         color = self.block_font_color[0] if number < 3 else self.block_font_color[1]
-        text = font.render(str(2 ** self.board[r][c]), True, color)
+        text = font.render(num_str, True, color)
         text_rect = text.get_rect(center=((self.block_x_pos[c] + self.block_size//2, self.block_y_pos[r] + self.block_size//2)))
         canvas.blit(text, text_rect)
 
@@ -345,7 +352,7 @@ class Game2048(gym.Env):
             self.block_font_color = [(119, 110, 101), (249, 246, 242)]
 
             # rendering: Block Font Size
-            self.block_font_size = [int(self.block_size * rate) for rate in [0.7, 0.6, 0.45]]
+            self.block_font_size = [int(self.block_size * rate) for rate in [0.7, 0.6, 0.5, 0.4]]
 
             if self.render_mode == "human":
                 pygame.display.init()

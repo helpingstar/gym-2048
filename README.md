@@ -56,7 +56,9 @@ If you reach the goal, you get a reward of 1; if you don't reach the goal and th
 If you want to change the reward policy, use Wrappers.
 # Arguments
 * `size` : The size of the board. The board will be made to be the size of (size, size).
-* `goal` : The number you want to reach. It should be entered as a power of two. The game ends when one of the numbers on the board becomes the `goal`.
+* `goal`
+  * The number you want to reach. It should be entered as a power of two. The game ends when one of the numbers on the board becomes the `goal`.
+  * This environment supports up to $2^{255}$. However, it is difficult to reach even $2^{20}$, so it is not recommended to enter more than this as a factor.
 
 # Wrappers
 
