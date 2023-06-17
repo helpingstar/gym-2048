@@ -94,6 +94,7 @@ class Game2048(gym.Env):
                         continue
                     if self.board[r][c] == self.board[r+1][c]:
                         return True
+        return False
 
     def _update_legal_moves(self):
         if self._check_if_same(0):
