@@ -4,6 +4,7 @@ import math
 import gymnasium as gym
 from gymnasium import spaces
 
+
 class Game2048(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 15}
 
@@ -17,12 +18,16 @@ class Game2048(gym.Env):
         # number of episode
         self.n_episode = 0
 
-        assert math.log2(goal).is_integer() and (2 < math.log2(goal) < 256), "goal must be 0 or a power of 2 and 4 < goal < 2^256"
+        assert math.log2(goal).is_integer() and (
+            2 < math.log2(goal) < 256
+        ), "goal must be 0 or a power of 2 and 4 < goal < 2^256"
 
         # goal from the board's perspective
         self.board_goal = int(np.log2(goal))
 
-        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8)
+        self.observation_space = spaces.Box(
+            low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8
+        )
 
         # 0: left, 1: right, 2: up, 3: down
         self.action_space = spaces.Discrete(4)
@@ -41,8 +46,8 @@ class Game2048(gym.Env):
         self.legal_moves = np.ones(4, np.uint8)
         self.is_legal = True
 
-        self.spawnblock()
-        self.spawnblock()
+        self._spawn_block()
+        self._spawn_block()
 
         # total score
         self.score = 0
@@ -67,9 +72,13 @@ class Game2048(gym.Env):
         return np.expand_dims(self.board, axis=0)
 
     def _get_info(self):
-        return {'score_per_step': self.score_per_step, 'score': self.score,
-                'max': np.max(self.board), 'action_mask': self.legal_moves,
-                'is_legal': self.is_legal}
+        return {
+            "score_per_step": self.score_per_step,
+            "score": self.score,
+            "max": np.max(self.board),
+            "action_mask": self.legal_moves,
+            "is_legal": self.is_legal,
+        }
 
     def _check_if_same(self, way: int) -> bool:
         """Check if blocks with the same number are next to each other.
@@ -82,17 +91,17 @@ class Game2048(gym.Env):
         """
         if way == 0:
             for r in range(self.size):
-                for c in range(self.size-1):
+                for c in range(self.size - 1):
                     if self.board[r][c] == 0:
                         continue
-                    if self.board[r][c] == self.board[r][c+1]:
+                    if self.board[r][c] == self.board[r][c + 1]:
                         return True
         else:
             for c in range(self.size):
-                for r in range(self.size-1):
+                for r in range(self.size - 1):
                     if self.board[r][c] == 0:
                         continue
-                    if self.board[r][c] == self.board[r+1][c]:
+                    if self.board[r][c] == self.board[r + 1][c]:
                         return True
         return False
 
@@ -112,17 +121,16 @@ class Game2048(gym.Env):
             self.legal_moves[3] = 0
 
         for i in range(4):
-            if self.legal_moves[i] == 1:
-                continue
-            self.legal_moves[i] = 1 if self._check_legal(i) else 0
+            if self.legal_moves[i] == 0 and self._check_legal(i):
+                self.legal_moves[i] = 1
         return
 
     def _check_legal(self, way: int):
         assert 0 <= way <= 4, "Way: [0, 4]"
         if way == 0:  # 0: left
-            checker = self.board[:, self.size-1] != 0
-            for i in range(self.size-2, -1, -1):
-                line = (self.board[:, i] != 0)
+            checker = self.board[:, self.size - 1] != 0
+            for i in range(self.size - 2, -1, -1):
+                line = self.board[:, i] != 0
                 if np.any((checker ^ line) & checker):
                     return True
                 else:
@@ -130,15 +138,15 @@ class Game2048(gym.Env):
         elif way == 1:  # 1: right
             checker = self.board[:, 0] != 0
             for i in range(1, self.size):
-                line = (self.board[:, i] != 0)
+                line = self.board[:, i] != 0
                 if np.any((checker ^ line) & checker):
                     return True
                 else:
                     checker |= line
         elif way == 2:  # 2: up
-            checker = self.board[self.size-1, :] != 0
-            for i in range(self.size-2, -1, -1):
-                line = (self.board[i, :] != 0)
+            checker = self.board[self.size - 1, :] != 0
+            for i in range(self.size - 2, -1, -1):
+                line = self.board[i, :] != 0
                 if np.any((checker ^ line) & checker):
                     return True
                 else:
@@ -147,24 +155,22 @@ class Game2048(gym.Env):
         else:  # 3: down
             checker = self.board[0, :] != 0
             for i in range(1, self.size):
-                line = (self.board[i, :] != 0)
+                line = self.board[i, :] != 0
                 if np.any((checker ^ line) & checker):
                     return True
                 else:
                     checker |= line
         return False
 
-    def spawnblock(self):
-        number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
-        empty_list = []
-        for r in range(self.size):
-            for c in range(self.size):
-                if self.board[r][c] == 0:
-                    empty_list.append((r, c))
+    def _spawn_block(self):
+        zero_pos = np.where(self.board == 0)
+        idx = np.random.randint(len(zero_pos[0]))
+        r, c = zero_pos[0][idx], zero_pos[1][idx]
 
-        r, c = self.np_random.choice(empty_list, 1)[0]
+        self.board[r][c] = self._random_1_2()
 
-        self.board[r][c] = number
+    def _random_1_2(self):
+        return 1 if self.np_random.random() < 0.8 else 2
 
     def step(self, action):
         # 0: left
@@ -187,7 +193,7 @@ class Game2048(gym.Env):
                     self.board[r, :] = new_line
             else:
                 for c in range(self.size):
-                    new_line = self._combiner(self.board[:, c], action-2)
+                    new_line = self._combiner(self.board[:, c], action - 2)
                     self.board[:, c] = new_line
             self.score += sum(self.score_per_step)
 
@@ -196,7 +202,7 @@ class Game2048(gym.Env):
                 reward = 1
                 terminated = True
             else:
-                self.spawnblock()
+                self._spawn_block()
                 terminated = self._is_game_over()
                 if terminated:
                     self._update_best_score()
@@ -241,30 +247,29 @@ class Game2048(gym.Env):
                         new_line[cur] = line[i]
                         cur += 1
                     else:
-                        if new_line[cur-1] == line[i] and is_combined[cur-1] == 0:
-                            new_line[cur-1] += 1
+                        if new_line[cur - 1] == line[i] and is_combined[cur - 1] == 0:
+                            new_line[cur - 1] += 1
                             # add score
                             # self.score_per_step must be int
-                            self.score_per_step.append(2 ** new_line[cur-1])
-                            is_combined[cur-1] = 1
+                            self.score_per_step.append(2 ** new_line[cur - 1])
+                            is_combined[cur - 1] = 1
                         else:
                             new_line[cur] = line[i]
                             cur += 1
         else:
-            cur = self.size-1
-            for i in range(self.size-1, -1, -1):
+            cur = self.size - 1
+            for i in range(self.size - 1, -1, -1):
                 if line[i] != 0:
-
-                    if cur == self.size-1:
+                    if cur == self.size - 1:
                         new_line[cur] = line[i]
                         cur -= 1
                     else:
-                        if new_line[cur+1] == line[i] and is_combined[cur+1] == 0:
-                            new_line[cur+1] += 1
+                        if new_line[cur + 1] == line[i] and is_combined[cur + 1] == 0:
+                            new_line[cur + 1] += 1
                             # add score
                             # self.score_per_step must be int
-                            self.score_per_step.append(2 ** new_line[cur+1])
-                            is_combined[cur+1] = 1
+                            self.score_per_step.append(2 ** new_line[cur + 1])
+                            is_combined[cur + 1] = 1
                         else:
                             new_line[cur] = line[i]
                             cur -= 1
@@ -288,7 +293,10 @@ class Game2048(gym.Env):
         pygame.draw.rect(
             canvas,
             self.block_color[min(11, number)],
-            ((self.block_x_pos[c], self.block_y_pos[r]), (self.block_size, self.block_size))
+            (
+                (self.block_x_pos[c], self.block_y_pos[r]),
+                (self.block_size, self.block_size),
+            ),
         )
         # Empty parts do not output a number.
         if self.board[r][c] == 0:
@@ -307,17 +315,24 @@ class Game2048(gym.Env):
             size = self.block_font_size[2]
         font = pygame.font.Font(None, size)
 
-        num_str = str(2 ** self.board[r][c]) if number < 20 else f'2^{number}'
+        num_str = str(2 ** self.board[r][c]) if number < 20 else f"2^{number}"
 
         color = self.block_font_color[0] if number < 3 else self.block_font_color[1]
         text = font.render(num_str, True, color)
-        text_rect = text.get_rect(center=((self.block_x_pos[c] + self.block_size//2, self.block_y_pos[r] + self.block_size//2)))
+        text_rect = text.get_rect(
+            center=(
+                (
+                    self.block_x_pos[c] + self.block_size // 2,
+                    self.block_y_pos[r] + self.block_size // 2,
+                )
+            )
+        )
         canvas.blit(text, text_rect)
 
     def _render_info(self, canvas):
         info_font = pygame.font.Font(None, 35)
-        score = info_font.render(f'score: {self.score}', True, (119, 110, 101))
-        best_score = info_font.render(f'best: {self.best_score}', True, (119, 110, 101))
+        score = info_font.render(f"score: {self.score}", True, (119, 110, 101))
+        best_score = info_font.render(f"best: {self.best_score}", True, (119, 110, 101))
 
         canvas.blit(score, (15, 25))
         canvas.blit(best_score, (15, 65))
@@ -330,13 +345,16 @@ class Game2048(gym.Env):
             # rendering : Size
             win_mg = 10
 
-            self.board_size = (self.window_width - 2 * win_mg)
+            self.board_size = self.window_width - 2 * win_mg
             self.block_size = int(self.board_size / (8 * self.size + 1) * 7)
 
             self.block_x_pos = np.zeros(self.size)
             self.block_y_pos = np.zeros(self.size)
 
-            self.left_top_board = (win_mg, self.window_height-win_mg-self.board_size)
+            self.left_top_board = (
+                win_mg,
+                self.window_height - win_mg - self.board_size,
+            )
             gap = self.board_size / (1 + 8 * self.size)
 
             for i in range(self.size):
@@ -344,16 +362,29 @@ class Game2048(gym.Env):
                 self.block_y_pos[i] = int(self.left_top_board[1] + (8 * i + 1) * gap)
 
             # rendering: Block Color
-            self.block_color = [(205, 193, 180), (238, 228, 218), (237, 224, 200), (242, 177, 121),
-                                (245, 149, 99),  (246, 124, 95),  (246, 94, 59),   (237, 207, 114),
-                                (237, 204, 97),  (237, 200, 80),  (237, 197, 63),  (237, 194, 46)]
+            self.block_color = [
+                (205, 193, 180),
+                (238, 228, 218),
+                (237, 224, 200),
+                (242, 177, 121),
+                (245, 149, 99),
+                (246, 124, 95),
+                (246, 94, 59),
+                (237, 207, 114),
+                (237, 204, 97),
+                (237, 200, 80),
+                (237, 197, 63),
+                (237, 194, 46),
+            ]
             self.game_color = {}
-            self.game_color['background'] = pygame.Color("#faf8ef")
-            self.game_color['board_background'] = pygame.Color("#bbada0")
+            self.game_color["background"] = pygame.Color("#faf8ef")
+            self.game_color["board_background"] = pygame.Color("#bbada0")
             self.block_font_color = [(119, 110, 101), (249, 246, 242)]
 
             # rendering: Block Font Size
-            self.block_font_size = [int(self.block_size * rate) for rate in [0.7, 0.6, 0.5, 0.4]]
+            self.block_font_size = [
+                int(self.block_size * rate) for rate in [0.7, 0.6, 0.5, 0.4]
+            ]
 
             if self.render_mode == "human":
                 pygame.display.init()
@@ -370,12 +401,12 @@ class Game2048(gym.Env):
         # rendering: Info
 
         canvas = pygame.Surface((self.window_width, self.window_height))
-        canvas.fill(self.game_color['background'])
+        canvas.fill(self.game_color["background"])
         # Rect(left, top, width, height)
         pygame.draw.rect(
             canvas,
-            self.game_color['board_background'],
-            (self.left_top_board, (self.board_size, self.board_size))
+            self.game_color["board_background"],
+            (self.left_top_board, (self.board_size, self.board_size)),
         )
 
         for r in range(self.size):
@@ -398,7 +429,6 @@ class Game2048(gym.Env):
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
-
 
     def close(self):
         if self.window is not None:
