@@ -41,8 +41,8 @@ class Game2048(gym.Env):
         self.legal_moves = np.ones(4, np.uint8)
         self.is_legal = True
 
-        self.spawnblock()
-        self.spawnblock()
+        self._spawn_block()
+        self._spawn_block()
 
         # total score
         self.score = 0
@@ -112,9 +112,8 @@ class Game2048(gym.Env):
             self.legal_moves[3] = 0
 
         for i in range(4):
-            if self.legal_moves[i] == 1:
-                continue
-            self.legal_moves[i] = 1 if self._check_legal(i) else 0
+            if self.legal_moves[i] == 0 and self._check_legal(i):
+                self.legal_moves[i] = 1
         return
 
     def _check_legal(self, way: int):
@@ -154,17 +153,15 @@ class Game2048(gym.Env):
                     checker |= line
         return False
 
-    def spawnblock(self):
-        number = self.np_random.choice([1, 2], 1, p=(0.8, 0.2)).item()
-        empty_list = []
-        for r in range(self.size):
-            for c in range(self.size):
-                if self.board[r][c] == 0:
-                    empty_list.append((r, c))
+    def _spawn_block(self):
+        zero_pos = np.where(self.board == 0)
+        idx = np.random.randint(len(zero_pos[0]))
+        r, c = zero_pos[0][idx], zero_pos[1][idx]
 
-        r, c = self.np_random.choice(empty_list, 1)[0]
+        self.board[r][c] = self._random_1_2()
 
-        self.board[r][c] = number
+    def _random_1_2(self):
+        return 1 if self.np_random.random() < 0.8 else 2
 
     def step(self, action):
         # 0: left
@@ -196,7 +193,7 @@ class Game2048(gym.Env):
                 reward = 1
                 terminated = True
             else:
-                self.spawnblock()
+                self._spawn_block()
                 terminated = self._is_game_over()
                 if terminated:
                     self._update_best_score()
