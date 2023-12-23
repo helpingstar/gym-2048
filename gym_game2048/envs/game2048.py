@@ -392,6 +392,7 @@ class Game2048(gym.Env):
                 self.window = pygame.display.set_mode(
                     (self.window_width, self.window_height)
                 )
+                pygame.display.set_caption("Game-2048")
             else:
                 self.window = pygame.Surface((self.window_width, self.window_height))
 
