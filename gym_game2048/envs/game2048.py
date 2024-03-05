@@ -25,9 +25,7 @@ class Game2048(gym.Env):
         # goal from the board's perspective
         self.board_goal = int(np.log2(goal))
 
-        self.observation_space = spaces.Box(
-            low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8
-        )
+        self.observation_space = spaces.Box(low=0, high=self.board_goal, shape=(1, size, size), dtype=np.uint8)
 
         # 0: left, 1: right, 2: up, 3: down
         self.action_space = spaces.Discrete(4)
@@ -43,7 +41,7 @@ class Game2048(gym.Env):
 
         self.board = np.zeros((self.size, self.size), dtype=np.uint8)
 
-        self.legal_moves = np.ones(4, np.uint8)
+        self.legal_moves = np.ones(4, np.int8)
         self.is_legal = True
 
         self._spawn_block()
@@ -382,16 +380,12 @@ class Game2048(gym.Env):
             self.block_font_color = [(119, 110, 101), (249, 246, 242)]
 
             # rendering: Block Font Size
-            self.block_font_size = [
-                int(self.block_size * rate) for rate in [0.7, 0.6, 0.5, 0.4]
-            ]
+            self.block_font_size = [int(self.block_size * rate) for rate in [0.7, 0.6, 0.5, 0.4]]
 
             if self.render_mode == "human":
                 pygame.display.init()
                 # (width, height)
-                self.window = pygame.display.set_mode(
-                    (self.window_width, self.window_height)
-                )
+                self.window = pygame.display.set_mode((self.window_width, self.window_height))
                 pygame.display.set_caption("Game-2048")
             else:
                 self.window = pygame.Surface((self.window_width, self.window_height))
@@ -427,9 +421,7 @@ class Game2048(gym.Env):
             # The following line will automatically add a delay to keep the framerate stable.
             self.clock.tick(self.metadata["render_fps"])
         else:  # rgb_array
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
-            )
+            return np.transpose(np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2))
 
     def close(self):
         if self.window is not None:
