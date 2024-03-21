@@ -1,17 +1,12 @@
-The code that trained this environment can be found below.
-
-[rl-application-gym-game2048](https://github.com/helpingstar/rl-application-gym-game2048)
-
 # gym-game2048
 
-https://github.com/helpingstar/gym-game2048/assets/54899900/b276a92b-bf1c-4e0f-aaf8-0236d38a5e7e
+https://github.com/helpingstar/gym-game2048/assets/54899900/0a740a9c-25eb-4322-8935-8c3d43a73184
 
 # Install
 ```bash
 git clone https://github.com/helpingstar/gym-game2048.git
 cd gym-game2048
-pip install -r requirements.txt
-pip install -e .
+poetry install
 ```
 
 
@@ -80,22 +75,15 @@ Example)
 | 0.81.. | 0.36.. | 0.18.. | 0.27.. |
 ```
 
-## RewardConverter
+## RewardConverter.
 
-Change the reward system.
+Set the reward system in the same way as the scoring system in 2048.
 
-* `goal`  : Rewards for clearing the game
-* `fail`  : Reward to receive when the game fails
-* `other` : A situation in which the game is neither goal nor fail
+* `div_pos_rew=2048` : This is the number that will be divided when points are scored.
+* `default_neg=0` : This is the reward for not scoring points.
+* `term_rew=-1` : This is the reward received at the end of the game.
 
-## RewardByScore
-
-The reward system is determined based on the points obtained, not whether or not cleared.
-
-* `log` : Whether to take the log of each score
-* `goal_bonus` : Additional reward for clearing the game
-
-## TerminateIllegalWrapper
+## TerminateIllegal
 
 The episode ends immediately upon Illegal Action.
 
