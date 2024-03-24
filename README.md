@@ -6,7 +6,7 @@ https://github.com/helpingstar/gym-game2048/assets/54899900/0a740a9c-25eb-4322-8
 ```bash
 git clone https://github.com/helpingstar/gym-game2048.git
 cd gym-game2048
-poetry install
+pip install -e .
 ```
 
 
