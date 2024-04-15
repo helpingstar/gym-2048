@@ -1,6 +1,12 @@
+"""
+This code is written to reference board positions based on `r`(row) and `c`(column) instead of `x` and `y`. 
+The top left corner is represented as [0, 0], where the first axis indicates `r` and the second axis indicates `c`, 
+with indices increasing downwards and to the right, respectively.
+"""
+
 import numpy as np
+from numpy.typing import NDArray
 import pygame
-import math
 import gymnasium as gym
 from gymnasium import spaces
 
@@ -18,8 +24,8 @@ class Game2048(gym.Env):
         # number of episode
         self.n_episode = 0
 
-        assert math.log2(goal).is_integer() and (
-            2 < math.log2(goal) < 256
+        assert np.log2(goal).is_integer() and (
+            2 < np.log2(goal) < 256
         ), "goal must be 0 or a power of 2 and 4 < goal < 2^256"
 
         # goal from the board's perspective
@@ -41,6 +47,7 @@ class Game2048(gym.Env):
 
         self.board = np.zeros((self.size, self.size), dtype=np.uint8)
 
+        # legal move == valid action
         self.legal_moves = np.ones(4, np.int8)
         self.is_legal = True
 
@@ -87,6 +94,8 @@ class Game2048(gym.Env):
         Returns:
             bool: Returns True if there are blocks with the same number side by side.
         """
+
+        # Checks each row (axis 0) to see if there are equal numbers side by side (axis 1).
         if way == 0:
             for r in range(self.size):
                 for c in range(self.size - 1):
@@ -94,6 +103,7 @@ class Game2048(gym.Env):
                         continue
                     if self.board[r][c] == self.board[r][c + 1]:
                         return True
+        # Checks each column (axis 1) to see if there are equal numbers above and below (axis 0).
         else:
             for c in range(self.size):
                 for r in range(self.size - 1):
@@ -104,6 +114,9 @@ class Game2048(gym.Env):
         return False
 
     def _update_legal_moves(self):
+        """Updates the self.legal_moves array that indicates whether an action is valid."""
+
+        # Check if same numbers are adjacent
         if self._check_if_same(0):
             self.legal_moves[0] = 1
             self.legal_moves[1] = 1
@@ -118,13 +131,22 @@ class Game2048(gym.Env):
             self.legal_moves[2] = 0
             self.legal_moves[3] = 0
 
+        # Check for empty space on the board
         for i in range(4):
             if self.legal_moves[i] == 0 and self._check_legal(i):
                 self.legal_moves[i] = 1
         return
 
-    def _check_legal(self, way: int):
-        assert 0 <= way <= 4, "Way: [0, 4]"
+    def _check_legal(self, way: int) -> bool:
+        """Determines whether an action is invalid based on empty spaces.
+        If there is an empty space in the direction a block is moving, it is a valid action.
+
+        Args:
+            way (int): The direction of movement of the block, which is the direction of the arrow keys or swipe in games.
+
+        Returns:
+            bool: Whether the `way` is valid
+        """
         if way == 0:  # 0: left
             checker = self.board[:, self.size - 1] != 0
             for i in range(self.size - 2, -1, -1):
@@ -160,14 +182,19 @@ class Game2048(gym.Env):
                     checker |= line
         return False
 
-    def _spawn_block(self):
+    def _spawn_block(self) -> None:
+        """Randomly pick one of the empty spaces on the board and create a new number (2 or 4) in that space"""
         zero_pos = np.where(self.board == 0)
-        idx = np.random.randint(len(zero_pos[0]))
+        idx = self.np_random.integers(len(zero_pos[0]))
         r, c = zero_pos[0][idx], zero_pos[1][idx]
-
         self.board[r][c] = self._random_1_2()
 
-    def _random_1_2(self):
+    def _random_1_2(self) -> int:
+        """Returns 1 with an 80% probability and 2 with a 20% probability.
+
+        Returns:
+            int: 1 (80%, 2-number block), 2 (20%, 4-number block)
+        """
         return 1 if self.np_random.random() < 0.8 else 2
 
     def step(self, action):
@@ -220,15 +247,17 @@ class Game2048(gym.Env):
 
         return self._get_obs(), reward, terminated, False, self._get_info()
 
-    def _combiner(self, line: np.ndarray, way: int) -> np.ndarray:
+    # TODO: This operation can be implemented in-place. However, if implemented in-place,
+    # be aware that after the loop ends, the current position of 'cur' and the parts behind it need to be filled with 0 (e.g., .fill(0)).
+    def _combiner(self, line: NDArray[np.int8], way: int) -> NDArray[np.int8]:
         """Combine identical blocks on a single line.
 
         Args:
-            line (np.ndarray): Lines to be merged.
+            line (NDArray[np.int8]): Lines to be merged.
             way (int): left: 0, right: 1
 
         Returns:
-            np.ndarray: combined line
+            NDArray[np.int8]: combined line
         """
 
         # way must be 0 or 1
@@ -245,10 +274,10 @@ class Game2048(gym.Env):
                         new_line[cur] = line[i]
                         cur += 1
                     else:
+                        # If the numbers on the two blocks are the same and the block at new_line[cur - 1] has not been merged before.
                         if new_line[cur - 1] == line[i] and is_combined[cur - 1] == 0:
                             new_line[cur - 1] += 1
-                            # add score
-                            # self.score_per_step must be int
+                            # append score
                             self.score_per_step.append(2 ** new_line[cur - 1])
                             is_combined[cur - 1] = 1
                         else:
@@ -264,8 +293,7 @@ class Game2048(gym.Env):
                     else:
                         if new_line[cur + 1] == line[i] and is_combined[cur + 1] == 0:
                             new_line[cur + 1] += 1
-                            # add score
-                            # self.score_per_step must be int
+                            # append score
                             self.score_per_step.append(2 ** new_line[cur + 1])
                             is_combined[cur + 1] = 1
                         else:
@@ -273,7 +301,7 @@ class Game2048(gym.Env):
                             cur -= 1
         return new_line
 
-    def _is_game_over(self):
+    def _is_game_over(self) -> bool:
         if np.any(self.board == 0):
             return False
         if self._check_if_same(0) or self._check_if_same(1):
@@ -283,7 +311,7 @@ class Game2048(gym.Env):
     def _update_best_score(self):
         self.best_score = max(self.best_score, self.score)
 
-    def _is_reach_goal(self):
+    def _is_reach_goal(self) -> bool:
         return np.any(self.board == self.board_goal)
 
     def _render_block(self, r, c, canvas: pygame.Surface):
