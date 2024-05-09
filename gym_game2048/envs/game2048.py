@@ -190,12 +190,12 @@ class Game2048(gym.Env):
         self.board[r][c] = self._random_1_2()
 
     def _random_1_2(self) -> int:
-        """Returns 1 with an 80% probability and 2 with a 20% probability.
+        """Returns 1 with an 90% probability and 2 with a 10% probability.
 
         Returns:
-            int: 1 (80%, 2-number block), 2 (20%, 4-number block)
+            int: 1 (90%, 2-number block), 2 (10%, 4-number block)
         """
-        return 1 if self.np_random.random() < 0.8 else 2
+        return 1 if self.np_random.random() < 0.9 else 2
 
     def step(self, action):
         # 0: left
